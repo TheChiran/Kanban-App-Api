@@ -290,6 +290,78 @@ module.exports.deleteProjectTitle = async(req,res)=>{
     }
 };
 
+//to get total number of working projects
+module.exports.getTotalProjectCount = async(req,res)=>{
+    const {_id} = req.user;
+
+    try{
+        const totalProject = await getProjectList(_id);
+        return res.status(200).send({total: totalProject.workingProjectList.length});
+    }
+    catch(err){
+        res.status(400).send({message: 'Something went wrong'});
+        console.log(err);
+    }
+};
+
+//to get list of if of projects
+const getProjectList = async(userId)=>{
+    const result = await User.findOne({_id: userId}).select('workingProjectList');
+    return result;
+}
+
+//to get total number of project request
+module.exports.getTotalProjectRequestCount = async(req,res)=>{
+    const {_id} = req.user;
+
+    try{
+        const totalProject = await User.findOne({_id}).select('projectRequestList');
+        return res.status(200).send({total: totalProject.projectRequestList.length});
+    }
+    catch(err){
+        res.status(400).send({message: 'Something went wrong'});
+        console.log(err);
+    }
+};
+
+//method to get project list
+module.exports.getProjectNameList = async(req,res)=>{
+    const workingProjectList = await getProjectList(req.user._id);
+
+    try{
+        const projectNameList = await Project.find({_id: workingProjectList.workingProjectList}).select('name');
+        // console.log(projectDetails);
+        res.send(projectNameList);
+    }
+    catch(err){
+        res.status(400).send({message: 'Something went wrong'});
+    }
+};
+
+//method to get full details of a project
+module.exports.getProjectDetails = async(req,res)=>{
+    const {projectId} = req.params;
+    // console.log(projectId);
+
+    const projectExists = await isProjectExists(projectId);
+    if(!projectExists) return res.status(400).send({message: 'Something went wrong'});
+
+    try{
+        const projectDetails = await Project.findOne({_id:projectId});
+        // console.log(projectDetails);
+        res.send(projectDetails);
+    }
+    catch(err){
+        res.status(400).send({message: 'Something went wrong'});
+    }
+};
+
+//method to check if project exists or not
+const isProjectExists = async(_id)=>{
+    const result = await Project.findOne({_id});
+    return result;
+}
+
 
 
 

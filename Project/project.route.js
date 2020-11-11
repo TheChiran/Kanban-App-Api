@@ -16,6 +16,10 @@ router.post('/add/content',verifyUser,projectController.addContentToTitle);
 router.post('/change/content/title',verifyUser,projectController.changeContentTitle);
 router.delete('/delete/title',verifyUser,projectController.deleteProjectTitle);
 router.delete('/delete',verifyUser,projectController.deleteProject);
+router.get('/count/project',verifyUser,projectController.getTotalProjectCount);
+router.get('/count/project/request',verifyUser,projectController.getTotalProjectRequestCount);
+router.get('/name/list',verifyUser,projectController.getProjectNameList);
+router.get('/details/:projectId',verifyUser,projectController.getProjectDetails);
 
 
 module.exports = router;
