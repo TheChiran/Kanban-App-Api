@@ -15,7 +15,7 @@ const registerValidation = data =>{
                 .required()
     };
     return Joi.validate(data,schema);
-}
+};
 
 //joi validation for sign in
 const loginValidation = data =>{
@@ -27,9 +27,9 @@ const loginValidation = data =>{
             password: Joi.string()
                 .min(8)
                 .required()
-        }
+        };
         return Joi.validate(data,schema);
-}
+};
 
 module.exports.registerValidation = registerValidation;
 module.exports.loginValidation = loginValidation;

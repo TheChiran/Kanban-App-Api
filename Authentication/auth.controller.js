@@ -1,5 +1,5 @@
 const User = require('./../User/User.model');
-const bcrypt = require('bcryptjs');
+const {hashPassword,comparePassword} = require('./../Utility/hash.password');
 const jwt = require('jsonwebtoken');
 const {registerValidation,loginValidation} = require('./../Middleware/validate.data');
 
@@ -16,8 +16,7 @@ module.exports.register = async(req,res)=>{
     if(emailExists) return res.status(400).send(`Email address already in use`);
 
     //create new user
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password,salt);
+    const hashedPassword = await hashPassword(password);
     const user = new User();
     user.username = username;
     user.email = email;
@@ -30,7 +29,7 @@ module.exports.register = async(req,res)=>{
         res.status(400).send(`Something went wrong`);
         // console.log(err);
     }
-}
+};
 
 module.exports.login = async(req,res)=>{
     //validate user input
@@ -47,13 +46,11 @@ module.exports.login = async(req,res)=>{
     if(!user) return res.status(400).send(`Invalid Credentials`);
 
     //check if password match
-    const passwordMatched = await bcrypt.compare(password,user.password);
+    const passwordMatched = await comparePassword(password,user.password);
     if(!passwordMatched) return res.status(400).send(`Invalid Credentials`);
 
     //{expiresIn: '900s'}
     //generate token
     const token = jwt.sign({_id: user._id},process.env.TOKEN_SECRECT);
     res.header('auth-token',token).send(token);
-
-
-}
+};

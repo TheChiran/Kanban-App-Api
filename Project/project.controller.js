@@ -308,7 +308,7 @@ module.exports.getTotalProjectCount = async(req,res)=>{
 const getProjectList = async(userId)=>{
     const result = await User.findOne({_id: userId}).select('workingProjectList');
     return result;
-}
+};
 
 //to get total number of project request
 module.exports.getTotalProjectRequestCount = async(req,res)=>{
