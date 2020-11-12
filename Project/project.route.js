@@ -20,6 +20,7 @@ router.get('/count/project',verifyUser,projectController.getTotalProjectCount);
 router.get('/count/project/request',verifyUser,projectController.getTotalProjectRequestCount);
 router.get('/name/list',verifyUser,projectController.getProjectNameList);
 router.get('/details/:projectId',verifyUser,projectController.getProjectDetails);
+router.post('/title/list',verifyUser,projectController.getProjectTitleList);
 
 
 module.exports = router;

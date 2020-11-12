@@ -360,7 +360,16 @@ module.exports.getProjectDetails = async(req,res)=>{
 const isProjectExists = async(_id)=>{
     const result = await Project.findOne({_id});
     return result;
-}
+};
+
+//method to get project title list
+module.exports.getProjectTitleList = async(req,res)=>{
+    const {projectId} = req.body;
+
+    const projectTitleList = await Project.findOne({_id: projectId}).select({'projectTitleList.name':1,'projectTitleList._id':1});
+    // console.log(projectTitleList);
+    res.send(projectTitleList);
+};
 
 
 
