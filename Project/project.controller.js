@@ -1,20 +1,21 @@
 const User = require('./../User/User.model');
 const Project = require('./Project.model');
 
+//method to invite a member to ptoject
 module.exports.inviteProject = async(req,res)=>{
     const {recieverEmail,projectName} = req.body;
     const {_id} = req.user;
     
     //get user mail
     const senderEmail = await User.findOne({_id}).select('email');
-    if(!senderEmail) return res.status(400).send(`invalid Credentials`);
-
+    if(!senderEmail) return res.send({message: 'invalid Credentials'});
+    //to check if sender email and reciever email are same or not
+    if(senderEmail.email == recieverEmail) return res.send({message: `Sorry! you cant invite yourself`});
     //check if reciever user exists or not
     const receiver = await User.findOne({email: recieverEmail});
-    if(!receiver) return res.status(400).send(`Invalid User Email`);
+    if(!receiver) return res.send({message: `Invalid User Email`});
 
-    // receiver.projectRequestList.invitedBy = senderEmail;
-    // receiver.projectRequestListprojectName = projectName;
+    
 
     try{
         await User.findOneAndUpdate(
@@ -45,9 +46,15 @@ module.exports.projectRequestList = async(req,res)=>{
 module.exports.acceptInvitation = async(req,res)=>{
     const {projectId} = req.body;
     const {_id} = req.user;
-    
+
+    //get user
+    const user = await User.findOne({_id}).select('email');
+    const pushUserToTeamMember = await addTeamMember(projectId,user.email);
+    if(!pushUserToTeamMember) return res.send({message: 'Sorry! Invalid user email or user already exists'});
+
+
     const result = await pushToWorkingProject(projectId,_id);
-    if(result != 200) return res.send(400).send('Something went wrong');
+    if(!result) return res.send({message: 'Unable to push to working project'});
 
     try{
         await User.findOneAndUpdate(
@@ -65,13 +72,49 @@ module.exports.acceptInvitation = async(req,res)=>{
     }
 
 };
+//push team member to project
+const addTeamMember = async(projectId,teamMemberEmail)=>{
+    // const {projectId,teamMemberEmail} = req.body;
+    //get username 
+    const user = await checkIfEmailIsValid(teamMemberEmail);
+    // if(!user) return res.status(400).send({message: `Invalid User Email`});
+    if(!user) return 0;
+    
+    //check if user already exists
+    const userExists = await checkIfuserExistsOnProject(projectId,user.username);
+    // if(userExists) return res.status(400).send({message: 'This User Already Exits in this project'});
+    if(userExists) return 0;
+
+    //push to user working project list before adding member to a project
+
+    try{
+        await Project.findOneAndUpdate(
+            {_id: projectId},
+            {$push:{
+                teamMembers: user.username
+            }});
+        // res.status(200).send({message: 'New member added to project'});
+        return 1;
+    }
+    catch(err){
+        // res.status(400).send('Something went wrong');
+        return 0;
+    }
+};
 
 //method to push to working project list
 const pushToWorkingProject = async(projectId,userId)=>{
-    await User.findOneAndUpdate(
-        {_id: userId},
-        {$push:{workingProjectList:projectId}
-    });
+    try{
+        await User.findOneAndUpdate(
+            {_id: userId},
+            {$push:{workingProjectList:projectId}
+        });
+        return 1;
+    }
+    catch(err){
+        //verify this error
+        return 0;
+    }
     
 };
 
@@ -102,7 +145,9 @@ module.exports.rejectInvitation = async(req,res)=>{
 module.exports.workingProjectList = async(req,res)=>{
     const {_id} = req.user;
     const workingProjectList = await User.findOne({_id}).select('workingProjectList');
-    res.send(workingProjectList.workingProjectList);
+
+    const workingProjects = await Project.find({_id: workingProjectList.workingProjectList}).select('name');
+    res.send(workingProjects);
     // console.log(workingProjectList);
 };
 
@@ -130,30 +175,18 @@ module.exports.createProject = async(req,res)=>{
     }
 
 };
-
-//push team member to project
-module.exports.addTeamMember = async(req,res)=>{
-    const {projectId,teamMemberEmail} = req.body;
-    //get username 
-    const user = await User.findOne({email: teamMemberEmail}).select('username');
-    if(!user) return res.status(400).send(`Invalid User Email`);
-    
-    //check if user already exists
-    const userExists = await Project.findOne({_id: projectId,teamMembers: {$in: [user.username]}}).count();
-    if(userExists) return res.status(400).send(`This User Already Exits in this project`);
-
-    try{
-        await Project.findOneAndUpdate(
-            {_id: projectId},
-            {$push:{
-                teamMembers: user.username
-            }});
-        res.status(200).send({message: 'New member added to project'});
-    }
-    catch(err){
-        res.status(400).send('Something went wrong');
-    }
+//method to check if user already exits or not
+const checkIfEmailIsValid = async(email)=>{
+    const user = await User.findOne({email: email}).count();
+    if(!user) return 0;
+    return 1;
 };
+//method to assign team member
+const checkIfuserExistsOnProject = async(projectId,username)=>{
+    const userCount = await Project.findOne({_id: projectId,teamMembers: {$in: [username]}}).count();
+    return userCount;
+};
+
 
 //method to create title for the creaeted project
 module.exports.createTitle = async(req,res)=>{
@@ -176,13 +209,32 @@ module.exports.createTitle = async(req,res)=>{
     }
 };
 
+//method to delete title of a project
+module.exports.deleteProjectTitle = async(req,res)=>{
+    const {projectId,titleId} = req.body;
+
+    try{
+        await Project.findOneAndUpdate({_id: projectId},{
+            $pull:{
+                projectTitleList:{
+                    _id: titleId
+                }
+            }
+        });
+        res.status(200).send({message: "Project Title Succesfully Deleted"});
+    }
+    catch(err){
+        res.status(400).send({message: "Something went wrong"});
+    }
+};
+
 //method to create content creaeted project title
 module.exports.addContentToTitle = async(req,res)=>{
     const {projectId,titleId,titleContent} = req.body;
     //check if content exists or not
     const contentResult = await checkIsContentExists(projectId,titleId,titleContent);
     // console.log(checkResult);
-    if(contentResult) return res.status(400).send({message: 'Content already exists inside this title'});
+    if(contentResult) return res.send({message: 'Unable to insert Content! already exists inside this title'});
     
     try{
         await pushContentIntoTitle(projectId,titleId,titleContent);
@@ -260,7 +312,7 @@ const removeContentFromTitle = async(titleId,titleContent,projectId)=>{
 
 //method to delete a project
 module.exports.deleteProject = async(req,res)=>{
-    const {projectId} = req.body;
+    const {projectId} = req.params;
 
     try{
         await Project.findByIdAndRemove({_id: projectId});
@@ -271,24 +323,6 @@ module.exports.deleteProject = async(req,res)=>{
     }
 };
 
-//method to delete title of a project
-module.exports.deleteProjectTitle = async(req,res)=>{
-    const {projectId,titleId} = req.body;
-
-    try{
-        await Project.findOneAndUpdate({_id: projectId},{
-            $pull:{
-                projectTitleList:{
-                    _id: titleId
-                }
-            }
-        });
-        res.status(200).send({message: "Project Title Succesfully Deleted"});
-    }
-    catch(err){
-        res.status(400).send({message: "Something went wrong"});
-    }
-};
 
 //to get total number of working projects
 module.exports.getTotalProjectCount = async(req,res)=>{
@@ -296,11 +330,13 @@ module.exports.getTotalProjectCount = async(req,res)=>{
 
     try{
         const totalProject = await getProjectList(_id);
-        return res.status(200).send({total: totalProject.workingProjectList.length});
+        res.status(200).send({total: totalProject.workingProjectList.length});
     }
     catch(err){
-        res.status(400).send({message: 'Something went wrong'});
         console.log(err);
+        return res.status(400).send({message: 'Something went wrong'});
+        
+        // console.log(err);
     }
 };
 
@@ -314,13 +350,15 @@ const getProjectList = async(userId)=>{
 module.exports.getTotalProjectRequestCount = async(req,res)=>{
     const {_id} = req.user;
 
+
     try{
         const totalProject = await User.findOne({_id}).select('projectRequestList');
-        return res.status(200).send({total: totalProject.projectRequestList.length});
+        res.send({total: totalProject.projectRequestList.length});
     }
     catch(err){
-        res.status(400).send({message: 'Something went wrong'});
         console.log(err);
+        return res.send({message: 'Something went wrong'});
+        // console.log(err);
     }
 };
 
@@ -342,12 +380,11 @@ module.exports.getProjectNameList = async(req,res)=>{
 module.exports.getProjectDetails = async(req,res)=>{
     const {projectId} = req.params;
     // console.log(projectId);
-
     const projectExists = await isProjectExists(projectId);
     if(!projectExists) return res.status(400).send({message: 'Something went wrong'});
 
     try{
-        const projectDetails = await Project.findOne({_id:projectId});
+        const projectDetails = await Project.findOne({_id:projectId}).select({'name': 1,'projectTitleList': 1});
         // console.log(projectDetails);
         res.send(projectDetails);
     }

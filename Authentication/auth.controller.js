@@ -34,11 +34,14 @@ module.exports.register = async(req,res)=>{
 module.exports.login = async(req,res)=>{
     //validate user input
     const {error} = loginValidation(req.body);
+    // if(error) console.log(error);
     if(error) return res.status(400).send(error);
 
 
     //destruct user inputs
-    const {email,password} = req.body;
+    const {password,email} = req.body;
+    // console.log(email);
+    // console.log(password);
     
     //check if user exists
     
@@ -52,5 +55,6 @@ module.exports.login = async(req,res)=>{
     //{expiresIn: '900s'}
     //generate token
     const token = jwt.sign({_id: user._id},process.env.TOKEN_SECRECT);
-    res.header('auth-token',token).send(token);
+    // res.header('auth-token',token).send(token);
+    res.send({accessToken:token});
 };
