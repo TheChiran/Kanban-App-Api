@@ -55,6 +55,7 @@ module.exports.login = async(req,res)=>{
     //{expiresIn: '900s'}
     //generate token
     const token = jwt.sign({_id: user._id},process.env.TOKEN_SECRECT);
+    // console.log(token);
     // res.header('auth-token',token).send(token);
     res.send({accessToken:token});
 };

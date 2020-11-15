@@ -3,7 +3,7 @@ const Project = require('./Project.model');
 
 //method to invite a member to ptoject
 module.exports.inviteProject = async(req,res)=>{
-    const {recieverEmail,projectName} = req.body;
+    const {recieverEmail,projectName,projectId} = req.body;
     const {_id} = req.user;
     
     //get user mail
@@ -23,7 +23,8 @@ module.exports.inviteProject = async(req,res)=>{
             {$push:{
                 projectRequestList:{
                     invitedBy: senderEmail.email, 
-                    projectName: projectName
+                    projectName: projectName,
+                    projectId: projectId
                 }
             }});
         // await receiver.save();
@@ -61,7 +62,7 @@ module.exports.acceptInvitation = async(req,res)=>{
             {_id},
             {$pull:{
                 projectRequestList:{
-                    _id: projectId
+                    projectId: projectId
                 }
             }});
         res.send({message: `Succesfully updated`});
@@ -177,9 +178,9 @@ module.exports.createProject = async(req,res)=>{
 };
 //method to check if user already exits or not
 const checkIfEmailIsValid = async(email)=>{
-    const user = await User.findOne({email: email}).count();
+    const user = await User.findOne({email: email}).select('username');
     if(!user) return 0;
-    return 1;
+    return user;
 };
 //method to assign team member
 const checkIfuserExistsOnProject = async(projectId,username)=>{

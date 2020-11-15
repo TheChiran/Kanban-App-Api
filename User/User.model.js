@@ -24,7 +24,8 @@ const userSchema = new mongoose.Schema({
     projectRequestList:[
         {
             invitedBy:String,
-            projectName: String
+            projectName: String,
+            projectId: String
         }
     ],
     workingProjectList: [String]
