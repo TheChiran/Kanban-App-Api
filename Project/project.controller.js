@@ -73,6 +73,7 @@ module.exports.acceptInvitation = async(req,res)=>{
     }
 
 };
+
 //push team member to project
 const addTeamMember = async(projectId,teamMemberEmail)=>{
     // const {projectId,teamMemberEmail} = req.body;
@@ -326,11 +327,11 @@ module.exports.deleteProject = async(req,res)=>{
 
 
 //to get total number of working projects
-module.exports.getTotalProjectCount = async(req,res)=>{
+module.exports.getTotalWorkingProjectCount = async(req,res)=>{
     const {_id} = req.user;
 
     try{
-        const totalProject = await getProjectList(_id);
+        const totalProject = await getWorkingProjectList(_id);
         res.status(200).send({total: totalProject.workingProjectList.length});
     }
     catch(err){
@@ -341,8 +342,8 @@ module.exports.getTotalProjectCount = async(req,res)=>{
     }
 };
 
-//to get list of if of projects
-const getProjectList = async(userId)=>{
+//to get list of working projects
+const getWorkingProjectList = async(userId)=>{
     const result = await User.findOne({_id: userId}).select('workingProjectList');
     return result;
 };
