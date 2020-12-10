@@ -4,9 +4,15 @@ const http = require('http').Server(app);
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
-
+//set up port
+const PORT = process.env.PORT || 3000;
+//initialize server
+//initialize app
+const server = http.listen(PORT,()=>{
+  // console.log(`Listening to port: ${PORT}`);
+});
 //set up socket server
-const io = require('socket.io')(http,{
+const io = require('socket.io')(server,{
     cors: {
         origin: '*',
         methods: ["GET", "POST"],
@@ -42,8 +48,7 @@ app.get('/',(req,res)=>{
 app.use('/api/auth',authRouter);
 app.use('/api/user',userRouter);
 app.use('/api/project',projectRouter);
-//set up port
-const PORT = process.env.PORT || 3000;
+
 const {v4: uid} = require('uuid');
 
 //socket live messages
@@ -87,8 +92,4 @@ io.on('connection',(socket)=>{
 
       io.in(data.room).emit('new message', {user:data.user, message:data.message});
     });
-});
-//initialize app
-http.listen(PORT,()=>{
-    console.log(`Listening to port: ${PORT}`);
 });
