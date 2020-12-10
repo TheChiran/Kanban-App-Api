@@ -4,6 +4,8 @@ const http = require('http').Server(app);
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
+
+//set up socket server
 const io = require('socket.io')(http,{
     cors: {
         origin: '*',
